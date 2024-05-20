@@ -39,10 +39,21 @@ public class MataPelajaranController {
   @PostMapping("guru/{id}/mapel")
   public ResponseEntity<MataPelajaran> simpanMapelDenganIdGuru(@PathVariable("id") Integer id,
       @Valid @RequestBody MataPelajaran entity) {
-    MataPelajaran _mapel = guruRepository.findById(id).map(guru -> {
-      entity.setGuru(guru);
-      return mataPelajaranRepository.save(entity);
-    }).orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
+    // MataPelajaran _mapel = guruRepository.findById(id).map(guru -> {
+    // entity.setGuru(guru);
+    // return mataPelajaranRepository.save(entity);
+    // }).orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru
+    // dengan ID = " + id));
+
+    Guru guru = guruRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
+
+    MataPelajaran _mapel = new MataPelajaran();
+    _mapel.setMt_pelajaran(entity.getMt_pelajaran());
+    _mapel.setKategori_pelajaran(entity.getKategori_pelajaran());
+    _mapel.setGuru(guru);
+
+    mataPelajaranRepository.save(_mapel);
 
     return new ResponseEntity<>(_mapel, HttpStatus.CREATED);
   }
