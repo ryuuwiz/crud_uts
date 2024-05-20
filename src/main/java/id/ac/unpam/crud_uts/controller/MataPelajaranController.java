@@ -1,70 +1,51 @@
 package id.ac.unpam.crud_uts.controller;
 
-import id.ac.unpam.crud_uts.model.MataPelajaran;
-import id.ac.unpam.crud_uts.service.MataPelajaranService;
-import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import id.ac.unpam.crud_uts.exception.ResourceNotFoundException;
+import id.ac.unpam.crud_uts.model.Guru;
+import id.ac.unpam.crud_uts.model.MataPelajaran;
+import id.ac.unpam.crud_uts.repository.GuruRepository;
+import id.ac.unpam.crud_uts.repository.MataPelajaranRepository;
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
-@RequestMapping("/api")
-@Validated
 public class MataPelajaranController {
 
-    @Autowired
-    MataPelajaranService mataPelajaranService;
+  @Autowired
+  GuruRepository guruRepository;
 
-    @PostMapping("/mapel")
-    public ResponseEntity<?> tambahMataPelajaran(@Valid @RequestBody MataPelajaran data) {
-        try {
-            MataPelajaran mataPelajaran = mataPelajaranService.simpan(data);
-            return new ResponseEntity<>(mataPelajaran, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
+  @Autowired
+  MataPelajaranRepository mataPelajaranRepository;
 
-    @GetMapping("/mapel")
-    public ResponseEntity<?> semuaMataPelajaran() {
-        try {
-            List<MataPelajaran> mataPelajaran = mataPelajaranService.semua();
-            return new ResponseEntity<>(mataPelajaran, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
+  @GetMapping("guru/{id}/mapel")
+  public ResponseEntity<List<MataPelajaran>> semuaMapelDenganIdGuru(@PathVariable("id") Integer id) {
+    Guru guru = guruRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
 
-    @GetMapping("/mapel/{id}")
-    public ResponseEntity<?> cariById(@PathVariable("id") Integer id) {
-        try {
-            MataPelajaran mataPelajaran = mataPelajaranService.satuMtPelajaran(id);
-            return new ResponseEntity<>(mataPelajaran, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
+    return new ResponseEntity<>(mataPelajaranRepository.findByGuru(guru), HttpStatus.OK);
+  }
 
-    @PutMapping("/mapel/{id}")
-    public ResponseEntity<?> ubahMataPelajaran(@PathVariable("id") Integer id, @RequestBody MataPelajaran data) {
-        try {
-            MataPelajaran mataPelajaran = mataPelajaranService.ubah(id, data);
-            return new ResponseEntity<>(mataPelajaran, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
+  @PostMapping("guru/{id}/mapel")
+  public ResponseEntity<MataPelajaran> simpanMapelDenganIdGuru(@PathVariable("id") Integer id,
+      @Valid @RequestBody MataPelajaran entity) {
+    MataPelajaran _mapel = guruRepository.findById(id).map(guru -> {
+      entity.setGuru(guru);
+      return mataPelajaranRepository.save(entity);
+    }).orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
 
-    @DeleteMapping("/mapel/{id}")
-    public ResponseEntity<?> hapusMataPelajaran(@PathVariable("id") Integer id) {
-        try {
-            return new ResponseEntity<>(mataPelajaranService.hapus(id), HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
+    return new ResponseEntity<>(_mapel, HttpStatus.CREATED);
+  }
+
 }

@@ -1,5 +1,8 @@
 package id.ac.unpam.crud_uts.model;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +26,8 @@ public class MataPelajaran {
     @NotBlank
     private String kategori_pelajaran;
 
-    @Column(nullable = false)
-    @NotNull
-    private int id_kurikulum;
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_guru", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Guru guru;
 }
