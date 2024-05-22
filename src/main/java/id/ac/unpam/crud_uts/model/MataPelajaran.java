@@ -1,7 +1,7 @@
 package id.ac.unpam.crud_uts.model;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -26,8 +26,8 @@ public class MataPelajaran {
     @NotBlank
     private String kategori_pelajaran;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_guru", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_guru")
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Guru guru;
 }
