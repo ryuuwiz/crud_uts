@@ -1,29 +1,22 @@
 package id.ac.unpam.crud_uts.controller;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
-
-import id.ac.unpam.crud_uts.exception.ResourceNotFoundException;
 import id.ac.unpam.crud_uts.model.Guru;
 import id.ac.unpam.crud_uts.model.MataPelajaran;
 import id.ac.unpam.crud_uts.repository.GuruRepository;
 import id.ac.unpam.crud_uts.repository.MataPelajaranRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
+@Validated
+@RequestMapping("api")
 public class MataPelajaranController {
 
   @Autowired
@@ -32,60 +25,50 @@ public class MataPelajaranController {
   @Autowired
   MataPelajaranRepository mataPelajaranRepository;
 
-  @GetMapping("guru/{id}/mapel")
-  public ResponseEntity<List<MataPelajaran>> semuaMapelDenganIdGuru(@PathVariable("id") Integer id) {
-    Guru guru = guruRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
-    List<MataPelajaran> mataPelajarans = mataPelajaranRepository.findByGuru(guru);
+  @PostMapping("guru/{id}/mapel")
+  public ResponseEntity<MataPelajaran> saveMtPelajaran(@PathVariable("id") Long id_guru, @Valid @RequestBody MataPelajaran body) {
+    Optional<Guru> guru = guruRepository.findById(id_guru);
 
-    return new ResponseEntity<>(mataPelajarans, HttpStatus.OK);
+    if (guru.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    body.setGuru(guru.get());
+    return ResponseEntity.status(HttpStatus.CREATED).body(mataPelajaranRepository.save(body));
+  }
+
+  @GetMapping("guru/{id}/mapel")
+  public ResponseEntity<List<MataPelajaran>> getAllMtPelajaran(@PathVariable("id") Long id_guru) {
+    Optional<Guru> guru = guruRepository.findById(id_guru);
+
+      return guru.isEmpty() ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(null) : ResponseEntity.status(HttpStatus.OK).body(mataPelajaranRepository.findAll());
   }
 
   @GetMapping("mapel/{id}")
-  public ResponseEntity<MataPelajaran> mapelDenganId(@PathVariable("id") Integer id) {
-    Optional<MataPelajaran> mapel = mataPelajaranRepository.findById(id);
+  public ResponseEntity<MataPelajaran> getMtPelajaranById(@PathVariable("id") Long id) {
+    Optional<MataPelajaran> mataPelajaran = mataPelajaranRepository.findById(id);
 
-    if (mapel.isPresent())
-      return new ResponseEntity<>(mapel.get(), HttpStatus.OK);
-    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-  }
-
-  @PostMapping("guru/{id}/mapel")
-  public ResponseEntity<MataPelajaran> simpanMapelDenganIdGuru(@PathVariable("id") Integer id,
-      @Valid @RequestBody MataPelajaran entity) {
-    Guru _guru = guruRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
-    entity.setGuru(_guru);
-    MataPelajaran _mapel = mataPelajaranRepository.save(entity);
-
-    return new ResponseEntity<>(_mapel, HttpStatus.CREATED);
+    return mataPelajaran.map(pelajaran -> ResponseEntity.status(HttpStatus.OK).body(pelajaran)).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
   }
 
   @PutMapping("mapel/{id}")
-  public ResponseEntity<MataPelajaran> ubahData(@RequestParam(required = false) Integer id_guru,
-      @PathVariable("id") Integer id,
-      @Valid @RequestBody MataPelajaran entity) {
-    MataPelajaran mapel = mataPelajaranRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Mata Pelajaran dengan ID = " + id));
+  public ResponseEntity<MataPelajaran> updateMtPelajaran(@PathVariable("id") Long id, @RequestParam(required = false) Long id_guru, @Valid @RequestBody MataPelajaran body) {
+    Optional<MataPelajaran> mataPelajaran = mataPelajaranRepository.findById(id);
 
-    if (id_guru == null) {
-      mapel.setMt_pelajaran(entity.getMt_pelajaran());
-      mapel.setKategori_pelajaran(entity.getKategori_pelajaran());
-    } else {
-      Guru guru = guruRepository.findById(id_guru)
-          .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id_guru));
-      mapel.setMt_pelajaran(entity.getMt_pelajaran());
-      mapel.setKategori_pelajaran(entity.getKategori_pelajaran());
-      mapel.setGuru(guru);
-    }
+    if (mataPelajaran.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 
-    mataPelajaranRepository.save(mapel);
-    return new ResponseEntity<>(mapel, HttpStatus.OK);
+    MataPelajaran _mapel = mataPelajaran.get();
+    _mapel.setMt_pelajaran(body.getMt_pelajaran());
+    _mapel.setKategori_pelajaran(body.getKategori_pelajaran());
+
+    if (id_guru == null) return ResponseEntity.status(HttpStatus.OK).body(mataPelajaranRepository.save(_mapel));
+      Optional<Guru> guru = guruRepository.findById(id_guru);
+      if (guru.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+      _mapel.setGuru(guru.get());
+      return ResponseEntity.status(HttpStatus.OK).body(mataPelajaranRepository.save(_mapel));
   }
 
   @DeleteMapping("mapel/{id}")
-  public ResponseEntity<HttpStatus> hapusMataPelajaran(@PathVariable("id") Integer id) {
+  public ResponseEntity<HttpStatus> deleteMtPelajaran(@PathVariable("id") Long id) {
     mataPelajaranRepository.deleteById(id);
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
+
 }

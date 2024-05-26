@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MataPelajaranRepository extends JpaRepository<MataPelajaran, Integer> {
+public interface MataPelajaranRepository extends JpaRepository<MataPelajaran, Long> {
   List<MataPelajaran> findByGuru(Guru guru);
 
   @Transactional
-  void deleteById(int id);
+  void deleteById(long id);
 }

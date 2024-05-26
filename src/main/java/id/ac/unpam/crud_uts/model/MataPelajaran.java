@@ -1,6 +1,5 @@
 package id.ac.unpam.crud_uts.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
@@ -14,7 +13,7 @@ import lombok.Data;
 public class MataPelajaran {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id_mtpelajaran;
+    private Long id_mtpelajaran;
 
     @Column(length = 30, nullable = false)
     @NotNull
@@ -28,6 +27,6 @@ public class MataPelajaran {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_guru")
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "mtapelajaran"})
     private Guru guru;
 }

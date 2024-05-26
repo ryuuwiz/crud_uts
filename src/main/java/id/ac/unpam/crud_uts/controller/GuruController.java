@@ -1,91 +1,67 @@
 package id.ac.unpam.crud_uts.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
-
-import id.ac.unpam.crud_uts.exception.ResourceNotFoundException;
 import id.ac.unpam.crud_uts.model.Guru;
 import id.ac.unpam.crud_uts.repository.GuruRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import java.util.List;
+import java.util.Optional;
+
+import static org.springframework.http.ResponseEntity.status;
 
 @RestController
+@Validated
+@RequestMapping("api")
 public class GuruController {
 
-  @Autowired
-  GuruRepository guruRepository;
+    @Autowired
+    GuruRepository guruRepository;
 
-  @GetMapping("guru")
-  public ResponseEntity<List<Guru>> semuaDataGuru(@RequestParam(required = false) Integer id) {
-    List<Guru> semuaGuru = new ArrayList<Guru>();
+    @PostMapping("guru")
+    public ResponseEntity<Guru> saveGuru(@Valid @RequestBody Guru body) {
+        return status(HttpStatus.CREATED).body(guruRepository.save(body));
+    }
 
-    if (id == null)
-      guruRepository.findAll().forEach(semuaGuru::add);
-    else
-      semuaGuru.add(guruRepository.findById(id).get());
+    @GetMapping("guru")
+    public ResponseEntity<List<Guru>> getAllGuru() {
+        return status(HttpStatus.OK).body(guruRepository.findAll());
+    }
 
-    if (semuaGuru.isEmpty())
-      return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    return new ResponseEntity<>(semuaGuru, HttpStatus.OK);
-  }
+    @GetMapping("guru/{id}")
+    public ResponseEntity<Guru> getGuruById(@PathVariable("id") Long id_guru) {
+        Optional<Guru> guru = guruRepository.findById(id_guru);
+        return guru.map(value -> status(HttpStatus.OK).body(value))
+                .orElseGet(() -> status(HttpStatus.NOT_FOUND).body(null));
+    }
 
-  @PostMapping("guru")
-  public ResponseEntity<Guru> simpanDataGuru(@Valid @RequestBody Guru guru) {
-    Guru _guru = new Guru();
+    @PutMapping("guru/{id}")
+    public ResponseEntity<Guru> updateGuru(@PathVariable("id") Long id_guru, @Valid @RequestBody Guru body) {
+        Optional<Guru> guru = guruRepository.findById(id_guru);
 
-    _guru.setNip(guru.getNip());
-    _guru.setNama_depan(guru.getNama_depan());
-    _guru.setNama_belakang(guru.getNama_belakang());
-    _guru.setTmpt_lahir(guru.getTmpt_lahir());
-    _guru.setTgl_lahir(guru.getTgl_lahir());
-    _guru.setAlamat(guru.getAlamat());
-    _guru.setNo_telepon(guru.getNo_telepon());
+        if (guru.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 
-    guruRepository.save(_guru);
+        Guru _guru = guru.get();
+        _guru.setNip(body.getNip());
+        _guru.setNama_depan(body.getNama_depan());
+        _guru.setNama_belakang(body.getNama_belakang());
+        _guru.setTmpt_lahir(body.getTmpt_lahir());
+        _guru.setTgl_lahir(body.getTgl_lahir());
+        _guru.setAlamat(body.getAlamat());
+        _guru.setNo_telepon(body.getNo_telepon());
 
-    return new ResponseEntity<>(_guru, HttpStatus.CREATED);
-  }
+        return ResponseEntity.status(HttpStatus.OK).body(guruRepository.save(_guru));
 
-  @PutMapping("guru/{id}")
-  public ResponseEntity<Guru> ubahDataGuru(@PathVariable("id") Integer id, @Valid @RequestBody Guru entity) {
-    Guru guru = guruRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Tidak ditemukan Guru dengan ID = " + id));
+    }
 
-    Guru _guru = guru;
-    _guru.setNip(entity.getNip());
-    _guru.setNama_depan(entity.getNama_depan());
-    _guru.setNama_belakang(entity.getNama_belakang());
-    _guru.setTmpt_lahir(entity.getTmpt_lahir());
-    _guru.setTgl_lahir(entity.getTgl_lahir());
-    _guru.setAlamat(entity.getAlamat());
-    _guru.setNo_telepon(entity.getNo_telepon());
-    guruRepository.save(_guru);
-
-    return new ResponseEntity<>(_guru, HttpStatus.OK);
-  }
-
-  @DeleteMapping("guru/{id}")
-  public ResponseEntity<HttpStatus> hapusDataGuru(@PathVariable("id") Integer id) {
-    Optional<Guru> guru = guruRepository.findById(id);
-
-    if (guru.isEmpty())
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-    guruRepository.deleteById(id);
-    return new ResponseEntity<>(HttpStatus.OK);
-  }
+    @DeleteMapping("guru/{id}")
+    public ResponseEntity<HttpStatus> deleteGuru(@PathVariable("id") Long id_guru) {
+        guruRepository.deleteById(id_guru);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 
 }
